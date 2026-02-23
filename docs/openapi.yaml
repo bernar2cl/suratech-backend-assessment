@@ -1,0 +1,379 @@
+openapi: 3.0.3
+info:
+  title: Quote Service API
+  version: 1.0.0
+  description: >
+    REST API for issuing quotes. Supports idempotent quote creation,
+    JWT/OAuth2 security, validation, and structured error responses.
+
+servers:
+  - url: https://api.example.com
+    description: Production
+  - url: https://api.sandbox.example.com
+    description: Sandbox
+
+paths:
+  /api/v1/quotes:
+    post:
+      summary: Create a new quote
+      description: >
+        Issues a new quote for a given document. The operation is idempotent
+        when the `Idempotency-Key` header is provided.
+      operationId: createQuote
+      tags:
+        - Quotes
+      security:
+        - bearerAuth: []
+        - oauth2:
+            - quotes.write
+      parameters:
+        - name: X-Idempotency-Key
+          in: header
+          required: false
+          description: >
+            Unique key to guarantee idempotency of quote creation requests.
+            If the same key is reused with an identical request body, the
+            original successful response is returned. If the body differs,
+            a `409 Conflict` is returned.
+          schema:
+            type: string
+            maxLength: 64
+      requestBody:
+        required: true
+        description: Quote creation request payload.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuoteRequest'
+            examples:
+              default:
+                summary: Basic quote request
+                value:
+                  documentId: "DOC-123456"
+                  customerId: "CUST-999"
+                  currency: "USD"
+                  amount: 1500.75
+                  riskScore: 0.82
+                  effectiveFrom: "2026-02-23T00:00:00Z"
+                  effectiveTo: "2026-03-23T23:59:59Z"
+                  metadata:
+                    channel: "WEB"
+                    agentId: "AGENT-42"
+      responses:
+        '201':
+          description: Quote successfully created
+          headers:
+            Location:
+              description: URI of the created quote resource
+              schema:
+                type: string
+                format: uri
+            X-Idempotency-Key:
+              description: Idempotency key associated with this quote, if provided in the request.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuoteResponse'
+        '202':
+          description: >
+            Quote creation has been accepted for asynchronous processing.
+            The client should poll the status endpoint (if available).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuoteAccepted'
+        '400':
+          description: Validation error in the request payload or headers.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+              examples:
+                missingField:
+                  summary: Missing required field
+                  value:
+                    traceId: "e4a7e3a6-d8a4-4a46-a4af-51f6fe2e9b41"
+                    errorCode: "VALIDATION_ERROR"
+                    message: "Request validation failed"
+                    fieldErrors:
+                      - field: "documentId"
+                        message: "must not be blank"
+        '401':
+          description: Authentication failed due to missing or invalid credentials.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                invalidToken:
+                  summary: Invalid access token
+                  value:
+                    traceId: "a7b23c90-3829-4b52-b7ec-8b1dcddaa7b2"
+                    errorCode: "UNAUTHENTICATED"
+                    message: "Invalid or expired access token"
+        '403':
+          description: The authenticated principal does not have permission to create quotes.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                forbidden:
+                  summary: Missing scope
+                  value:
+                    traceId: "c9e42f0a-997b-4ad7-8a9d-0449a4bc3344"
+                    errorCode: "FORBIDDEN"
+                    message: "Insufficient permissions to create quotes"
+        '409':
+          description: >
+            Idempotency conflict. The same `Idempotency-Key` was used with a
+            different request payload.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                idempotencyConflict:
+                  summary: Idempotency conflict
+                  value:
+                    traceId: "f1c2d53b-050e-4b61-9ae0-355b683ec17a"
+                    errorCode: "IDEMPOTENCY_CONFLICT"
+                    message: "A different request already used this Idempotency-Key"
+        '429':
+          description: Too many requests; the client is being rate limited.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                rateLimited:
+                  summary: Rate limit exceeded
+                  value:
+                    traceId: "5245e94a-ac0e-4b7c-9d4f-4eac46c09f00"
+                    errorCode: "RATE_LIMITED"
+                    message: "Too many requests. Please retry later."
+        '500':
+          description: Unexpected server-side error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                genericError:
+                  summary: Internal server error
+                  value:
+                    traceId: "d28bc29e-bb4b-4b1c-9c67-3096a3de6aa9"
+                    errorCode: "INTERNAL_SERVER_ERROR"
+                    message: "An unexpected error occurred"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: >
+        JWT bearer token issued by the identity provider. Typically used
+        in machine-to-machine or user-context scenarios.
+    oauth2:
+      type: oauth2
+      description: OAuth2 Authorization Server settings.
+      flows:
+        clientCredentials:
+          tokenUrl: https://auth.example.com/oauth2/token
+          scopes:
+            quotes.read: Read quotes
+            quotes.write: Create new quotes
+
+  schemas:
+    QuoteRequest:
+      type: object
+      required:
+        - documentId
+        - customerId
+        - currency
+        - amount
+        - effectiveFrom
+      properties:
+        documentId:
+          type: string
+          description: Business identifier of the document (e.g., policy or lead).
+          maxLength: 64
+        customerId:
+          type: string
+          description: Identifier of the customer in the CRM system.
+          maxLength: 64
+        currency:
+          type: string
+          description: ISO 4217 currency code.
+          minLength: 3
+          maxLength: 3
+          example: "USD"
+        amount:
+          type: number
+          format: double
+          description: Monetary amount of the quote.
+          minimum: 0
+        riskScore:
+          type: number
+          format: double
+          description: Optional risk score used for underwriting decisions.
+          minimum: 0
+          maximum: 1
+        effectiveFrom:
+          type: string
+          format: date-time
+          description: Start of quote validity period (inclusive).
+        effectiveTo:
+          type: string
+          format: date-time
+          description: End of quote validity period (inclusive). Must be after `effectiveFrom` if provided.
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+          description: >
+            Arbitrary key-value attributes associated with the quote (e.g., channel, agentId).
+
+    QuoteResponse:
+      type: object
+      description: Response payload returned when a quote is successfully created.
+      required:
+        - quoteId
+        - documentId
+        - customerId
+        - currency
+        - amount
+        - effectiveFrom
+        - status
+        - createdAt
+      properties:
+        quoteId:
+          type: string
+          description: System-generated unique identifier of the quote.
+          example: "QUOTE-7890abcd"
+        documentId:
+          type: string
+        customerId:
+          type: string
+        currency:
+          type: string
+        amount:
+          type: number
+          format: double
+        riskScore:
+          type: number
+          format: double
+          nullable: true
+        effectiveFrom:
+          type: string
+          format: date-time
+        effectiveTo:
+          type: string
+          format: date-time
+          nullable: true
+        status:
+          type: string
+          description: Current status of the quote.
+          enum:
+            - PENDING
+            - ISSUED
+            - REJECTED
+            - EXPIRED
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp when the quote was created.
+        updatedAt:
+          type: string
+          format: date-time
+          description: Timestamp of the last update to the quote.
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+
+    QuoteAccepted:
+      type: object
+      description: >
+        Asynchronous acceptance response, used when quote processing is deferred.
+      required:
+        - requestId
+        - status
+      properties:
+        requestId:
+          type: string
+          description: Correlation identifier for tracking the async request.
+        status:
+          type: string
+          enum:
+            - ACCEPTED
+        estimatedCompletionTime:
+          type: string
+          format: date-time
+          description: Optional estimated completion time.
+        links:
+          type: object
+          properties:
+            status:
+              type: string
+              format: uri
+              description: URI to check the status of quote processing.
+
+    Error:
+      type: object
+      description: Standard error response envelope.
+      required:
+        - traceId
+        - errorCode
+        - message
+      properties:
+        traceId:
+          type: string
+          description: Correlation identifier for tracing this error across systems.
+        errorCode:
+          type: string
+          description: Stable, machine-readable error code.
+          example: "INTERNAL_SERVER_ERROR"
+        message:
+          type: string
+          description: Human-readable error description.
+        details:
+          type: object
+          additionalProperties: true
+          description: Optional structured details specific to this error.
+
+    FieldError:
+      type: object
+      description: Details about a specific field-level validation failure.
+      required:
+        - field
+        - message
+      properties:
+        field:
+          type: string
+          description: Name of the field that failed validation.
+        message:
+          type: string
+          description: Description of the validation failure.
+        rejectedValue:
+          description: The value that was rejected, if safe to expose.
+        code:
+          type: string
+          description: Optional validation error code (e.g., NOT_NULL, PATTERN).
+
+    ValidationError:
+      allOf:
+        - $ref: '#/components/schemas/Error'
+        - type: object
+          description: Error response used for validation failures.
+          properties:
+            fieldErrors:
+              type: array
+              items:
+                $ref: '#/components/schemas/FieldError'
+
+security:
+  - bearerAuth: []

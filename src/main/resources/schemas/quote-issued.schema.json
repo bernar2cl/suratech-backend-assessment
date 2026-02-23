@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/quote-issued.schema.json",
+  "title": "QuoteIssued",
+  "type": "object",
+  "required": [
+    "eventId",
+    "eventType",
+    "eventTimestamp",
+    "quoteId",
+    "documentId",
+    "customerId",
+    "amount",
+    "currency",
+    "status"
+  ],
+  "properties": {
+    "eventId": {
+      "type": "string",
+      "description": "Globally unique identifier for this event instance (UUID)."
+    },
+    "eventType": {
+      "type": "string",
+      "const": "QuoteIssued",
+      "description": "Type of the event."
+    },
+    "eventTimestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Time when the event was produced (UTC)."
+    },
+    "traceId": {
+      "type": "string",
+      "description": "Correlation ID for tracing across services."
+    },
+    "quoteId": {
+      "type": "string",
+      "description": "Unique identifier of the quote."
+    },
+    "documentId": {
+      "type": "string",
+      "description": "Business document identifier associated with the quote."
+    },
+    "customerId": {
+      "type": "string",
+      "description": "Customer identifier."
+    },
+    "amount": {
+      "type": "number",
+      "description": "Monetary amount of the quote."
+    },
+    "currency": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 3,
+      "description": "ISO 4217 currency code."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["ISSUED", "REVISED", "EXPIRED", "CANCELLED"],
+      "description": "Current status of the quote from the emitting system."
+    },
+    "effectiveFrom": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Start of quote validity period (inclusive)."
+    },
+    "effectiveTo": {
+      "type": "string",
+      "format": "date-time",
+      "description": "End of quote validity period (inclusive)."
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "description": "Optional free-form key/value metadata."
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,82 @@
+trigger:
+  branches:
+    include:
+      - main
+      - master
+
+variables:
+  javaVersion: '21'
+  imageRepository: 'quote-service'
+  dockerRegistryServiceConnection: 'YOUR-ACR-SERVICE-CONNECTION'
+  dockerRegistry: 'your-registry.azurecr.io'
+  imageTag: '$(Build.BuildId)'
+
+stages:
+  - stage: Build_Test
+    displayName: Build and Unit Test
+    jobs:
+      - job: Build
+        displayName: Build and Test with Gradle
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - task: UseJavaVersion@1
+            inputs:
+              versionSpec: '$(javaVersion)'
+              jdkArchitectureOption: 'x64'
+              jdkSourceOption: 'PreInstalled'
+
+          - task: Gradle@3
+            displayName: Gradle build & test
+            inputs:
+              gradleWrapperFile: 'gradlew'
+              tasks: 'clean test bootJar'
+              publishJUnitResults: true
+              testResultsFiles: '**/build/test-results/test/*.xml'
+              javaHomeOption: 'JDKVersion'
+              jdkVersionOption: '$(javaVersion)'
+              sonarQubeRunAnalysis: false
+
+          - task: PublishBuildArtifacts@1
+            displayName: Publish JAR artifact
+            inputs:
+              PathtoPublish: 'build/libs'
+              ArtifactName: 'drop'
+              publishLocation: 'Container'
+
+  - stage: Docker_Build_Push
+    displayName: Build and Push Docker Image
+    dependsOn: Build_Test
+    jobs:
+      - job: Docker
+        displayName: Docker Build and Push
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - task: Docker@2
+            displayName: Build and push image
+            inputs:
+              containerRegistry: '$(dockerRegistryServiceConnection)'
+              repository: '$(imageRepository)'
+              command: 'buildAndPush'
+              Dockerfile: 'Dockerfile'
+              tags: |
+                $(imageTag)
+                latest
+
+  - stage: Integration_Tests
+    displayName: Integration Tests (Placeholder)
+    dependsOn: Docker_Build_Push
+    condition: succeeded()
+    jobs:
+      - job: IntegrationTests
+        displayName: Run integration tests (to be implemented)
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - script: |
+              echo "TODO: Implement integration tests against deployed environment or docker-compose."
+              # Example:
+              # npm install -g newman
+              # newman run postman_collection.json --env-var baseUrl=$(INTEGRATION_BASE_URL)
+            displayName: Placeholder integration test step
