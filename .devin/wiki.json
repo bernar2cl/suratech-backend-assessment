@@ -1,0 +1,172 @@
+{
+  "repo_notes": [
+    {
+      "content": ""
+    }
+  ],
+  "pages": [
+    {
+      "title": "Overview",
+      "purpose": "Introduce the Quote Service, its business purpose, high-level architecture, and key capabilities including quote management, event-driven integration, and cloud-native deployment",
+      "page_notes": [
+        {
+          "content": "Add emojies and icons to improve the description"
+        }
+      ]
+    },
+    {
+      "title": "Getting Started",
+      "purpose": "Guide developers through initial setup, prerequisites, building the project, and running the application locally",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Build Configuration",
+      "purpose": "Detail the Gradle build system, dependencies, plugins, and how the project is structured and compiled",
+      "parent": "Getting Started",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Architecture",
+      "purpose": "Provide comprehensive overview of the system architecture, including layers, components, and design patterns used throughout the Quote Service",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "API Design",
+      "purpose": "Document the REST API contract, endpoints, request/response formats, authentication, idempotency, and error handling patterns",
+      "parent": "Architecture",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Data Layer",
+      "purpose": "Explain database schema, optimized queries, indexing strategy, and data access patterns for the Quote domain",
+      "parent": "Architecture",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Event-Driven Integration",
+      "purpose": "Detail the event-driven architecture, Azure Service Bus integration, MuleSoft flows, idempotency patterns, and downstream system integration",
+      "parent": "Architecture",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Security Model",
+      "purpose": "Describe OAuth2 authentication, JWT validation, authorization scopes, and security configuration throughout the application",
+      "parent": "Architecture",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Resilience and Observability",
+      "purpose": "Explain circuit breakers, retry patterns, health checks, metrics collection, distributed tracing, and monitoring capabilities",
+      "parent": "Architecture",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Deployment",
+      "purpose": "Overview of deployment strategies, environments, and the path from code to production",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Containerization",
+      "purpose": "Explain the Docker multi-stage build, container image structure, JVM configuration, and security practices",
+      "parent": "Deployment",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Kubernetes Configuration",
+      "purpose": "Detail Kubernetes manifests for deployment, service exposure, and horizontal pod autoscaling configuration",
+      "parent": "Deployment",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "CI/CD Pipeline",
+      "purpose": "Document the Azure Pipelines configuration, build stages, testing gates, Docker image creation, and deployment automation",
+      "parent": "Deployment",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Testing Strategy",
+      "purpose": "Describe the multi-layered testing approach including unit tests, integration tests, and performance testing with k6",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Performance Testing",
+      "purpose": "Detail k6 load testing scripts, test scenarios, performance thresholds, and how to execute and interpret results",
+      "parent": "Testing Strategy",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Operations Guide",
+      "purpose": "Provide operational runbook including deployment procedures, monitoring, troubleshooting, and maintenance tasks",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Development Workflow",
+      "purpose": "Explain the development process, AI usage in development, Git workflow, code quality standards, and contribution guidelines",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    }
+  ]
+}
